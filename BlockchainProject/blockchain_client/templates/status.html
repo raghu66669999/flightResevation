@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Booking Status</title>
+    <link rel="stylesheet" href="/static/vendor/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/css/custom.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container">
+            <a href="#" class="navbar-brand">Blockchain Client</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ml-auto">
+                    <li class="nav-item">
+                        <a href="/" class="nav-link">Wallet Generator</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/book/flight" class="nav-link">Book Flight</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/view/transactions" class="nav-link">View bookings</a>
+                    </li>
+                    <li class="nav-item active">
+                        <a href="/view/status" class="nav-link">Check Status</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mt-5">
+        <h2 class="mt-5">Update Booking Status</h2>
+        <div class="card mt-4">
+            <div class="card-body">
+                <form id="search_booking_form">
+                    <div class="form-group">
+                        <label for="booking_id">Booking ID:</label>
+                        <input type="text" class="form-control" id="booking_id" name="booking_id" placeholder="Enter Booking ID" required>
+                    </div>
+                    <button type="button" id="search_booking" class="btn btn-primary btn-lg">Search</button>
+                </form>
+
+                <!-- Booking Details Section -->
+                <div id="booking_details" class="mt-5" style="display: none;">
+                    <h4>Booking Details</h4>
+                    <table class="table table-striped table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Booking ID</th>
+                                <th>Passenger Name</th>
+                                <th>Flight Number</th>
+                                <th>Flight Date</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="booking_table_body">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include JavaScript -->
+    <script src="/static/vendor/jquery/jquery.min.js"></script>
+    <script src="/static/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Search Booking
+            $('#search_booking').click(function() {
+                const bookingId = $('#booking_id').val();
+
+                if (!bookingId) {
+                    alert('Please enter a Booking ID');
+                    return;
+                }
+                $.ajax({
+                    url: 'http://127.0.0.1:5001/search_booking',
+                    type: 'POST',
+                    data: { booking_id: $('#booking_id').val() },
+                    success: function(response) {
+                        $('#booking_details').show();
+                        const transaction = response.transaction;
+                        const actionButton = transaction.booking_status == 'Booked'
+                            ? `<button class="btn btn-danger cancel-booking" data-id="${transaction.booking_id}">Cancel Booking</button>`
+                            : 'No actions available';
+
+                        $('#booking_table_body').html(`
+                            <tr>
+                                <td>${transaction.booking_id}</td>
+                                <td>${transaction.user_name}</td>
+                                <td>${transaction.flight_number}</td>
+                                <td>${transaction.date}</td>
+                                <td>${transaction.amount}</td>
+                                <td>${transaction.booking_status}</td>
+                                td>${transaction.action}</td>
+                                <td>${actionButton}</td>
+                            </tr>
+                        `);
+                    },
+                    error: function(response) {
+                        alert(response.responseJSON.message || 'An error occurred');
+                        $('#booking_details').hide();
+                    }
+                });
+            });
+
+            // Cancel Booking
+            $(document).on('click', '.cancel-booking', function() {
+                const bookingId = $(this).data('id');
+
+                // Fetch booking details
+                $.ajax({
+                    url: 'http://127.0.0.1:5001/search_booking',
+                    type: 'POST',
+                    data: { booking_id: bookingId },
+                    success: function(response) {
+                        const transaction = response.transaction;
+
+                        // Prepare refund transaction
+                        const refundData = {
+                            sender_public_key: transaction.recipient_public_key,
+                            recipient_public_key: transaction.sender_public_key,
+                            amount: transaction.amount,
+                            signature: '', // Add signature logic if applicable
+                            booking_id: transaction.booking_id,
+                            flight_number: transaction.flight_number,
+                            user_name: transaction.user_name,
+                            date: transaction.date,
+                            source: transaction.source,
+                            destination: transaction.destination,
+                            booking_status: 'Cancelled'
+                        };
+
+                        // Post refund transaction
+                        $.ajax({
+                            url: 'http://127.0.0.1:5001/transactions/new',
+                            type: 'POST',
+                            data: refundData,
+                            success: function(refundResponse) {
+                                alert('Booking cancelled and refund processed.');
+                                $('#search_booking').click(); // Refresh table
+                            },
+                            error: function(refundError) {
+                                alert(refundError.responseJSON.message || 'Error processing refund.');
+                            }
+                        });
+                    },
+                    error: function(error) {
+                        alert('Error retrieving booking details.');
+                    }
+                });
+            });
+            });
+    </script>
+</body>
+</html>

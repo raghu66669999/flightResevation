@@ -1,0 +1,4 @@
+id,flight_number,airline,source,destination,departure_time,arrival_time,price,seats_available,flight_duration
+1,AA123,American Airlines,New York (JFK),Los Angeles (LAX),2024-12-29 02:07,2024-12-29 05:37,350.5,150,5h 30m
+2,DL456,Delta Airlines,Chicago (ORD),Miami (MIA),2024-12-30 04:07,2024-12-30 07:22,250.75,120,3h 15m
+3,UA789,United Airlines,San Francisco (SFO),Seattle (SEA),2024-12-31 01:07,2024-12-31 02:52,180.25,100,1h 45m

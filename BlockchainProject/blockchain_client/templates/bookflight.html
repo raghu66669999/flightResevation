@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Booking</title>
+    <link rel="stylesheet" href="/static/vendor/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/css/custom.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container">
+            <a href="#" class="navbar-brand">Blockchain Flight Booking</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ml-auto">
+                    <li class="nav-item">
+                        <a href="/" class="nav-link">Wallet Generator</a>
+                    </li>
+                    <li class="nav-item active">
+                        <a href="/book/flight" class="nav-link">Book Flight</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/view/transactions" class="nav-link">View Bookings</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/view/status" class="nav-link">View status</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-5">
+        <h2 class="text-center mb-4">Flight Search</h2>
+
+        <div class="row mb-3">
+            <div class="col-md-3">
+                <input type="text" id="sourceFilter" class="form-control" placeholder="Source">
+            </div>
+            <div class="col-md-3">
+                <input type="text" id="destinationFilter" class="form-control" placeholder="Destination">
+            </div>
+            <div class="col-md-3">
+                <input type="date" id="dateFilter" class="form-control" placeholder="Travel Date">
+            </div>
+            <div class="col-md-3">
+                <button id="searchFlights" class="btn btn-primary btn-block">Search Flights</button>
+            </div>
+        </div>
+
+        <table class="table table-striped" id="flightsTable">
+            <thead>
+                <tr>
+                    <th>Flight Number</th>
+                    <th>Source</th>
+                    <th>Destination</th>
+                    <th>Price</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="flightRows">
+                <!-- Flights will be dynamically populated here -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Booking Modal -->
+    <div class="modal fade" id="bookingModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Book Flight</h5>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="bookingForm">
+                        <!-- Hidden inputs for backend processing -->
+                        <input type="hidden" id="selectedFlightId" name="flight_id">
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Passenger Full Name</label>
+                                    <input type="text" class="form-control" id="passengerName" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Flight Number</label>
+                                    <input type="text" class="form-control" id="flightNumber" readonly>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Source</label>
+                                    <input type="text" class="form-control" id="sourceLocation" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Destination</label>
+                                    <input type="text" class="form-control" id="destinationLocation" readonly>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Price</label>
+                                    <input type="text" class="form-control" id="flightPrice" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Travel Date</label>
+                                    <input type="date" class="form-control" id="travelDate" readonly>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Your Public Key</label>
+                                    <textarea class="form-control" id="publicKey" rows="3" ></textarea>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Your Private Key</label>
+                                    <textarea class="form-control" id="privateKey" rows="3" ></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="proceedBooking">Proceed to Payment</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Booking Confirmation Modal -->
+    <div class="modal fade" id="bookingConfirmationModal" tabindex="-1" role="dialog" aria-labelledby="bookingConfirmationLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="bookingConfirmationLabel">Booking Successful</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    Your booking was successful!
+                    <br>
+                    Booking ID: <span id="bookingId"></span>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/vendor/jquery/jquery.min.js"></script>
+    <script src="/static/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script>
+    $(function() {
+        function fetchFlights() {
+            $.ajax({
+                url: '/fetch/flights',
+                method: 'GET',
+                success: function(flights) {
+                    let flightRows = $('#flightRows');
+                    flightRows.empty();
+
+                    flights.forEach(function(flight) {
+                        let row = `
+                            <tr>
+                                <td>${flight.flight_number}</td>
+                                <td>${flight.source}</td>
+                                <td>${flight.destination}</td>
+                                <td>$${flight.price.toFixed(2)}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-success book-flight"
+                                            data-id="${flight.id}"
+                                            data-flight-number="${flight.flight_number}"
+                                            data-source="${flight.source}"
+                                            data-destination="${flight.destination}"
+                                            data-price="${flight.price}">
+                                        Book Now
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                        flightRows.append(row);
+                    });
+                }
+            });
+        }
+
+        // Initial flight fetch
+        fetchFlights();
+
+        // Flight search functionality
+        $('#searchFlights').click(function() {
+            let source = $('#sourceFilter').val().toLowerCase();
+            let destination = $('#destinationFilter').val().toLowerCase();
+
+            $('#flightRows tr').each(function() {
+                let row = $(this);
+                let rowSource = row.find('td:nth-child(2)').text().toLowerCase();
+                let rowDestination = row.find('td:nth-child(3)').text().toLowerCase();
+
+                let sourceMatch = source === '' || rowSource.includes(source);
+                let destMatch = destination === '' || rowDestination.includes(destination);
+
+                row.toggle(sourceMatch && destMatch);
+            });
+        });
+
+        // Book Flight Modal Trigger
+        $(document).on('click', '.book-flight', function() {
+            let flightId = $(this).data('id');
+            let flightNumber = $(this).data('flight-number');
+            let source = $(this).data('source');
+            let destination = $(this).data('destination');
+            let price = $(this).data('price');
+
+            // Set non-editable fields
+            $('#selectedFlightId').val(flightId);
+            $('#flightNumber').val(flightNumber);
+            $('#sourceLocation').val(source);
+            $('#destinationLocation').val(destination);
+            $('#flightPrice').val('$' + price.toFixed(2));
+
+            // Set read-only travel date to today's date
+            $('#travelDate').val(new Date().toISOString().split('T')[0]);
+
+            // Generate new wallet
+            $.ajax({
+                url: '/wallet/new',
+                method: 'GET',
+                success: function(wallet) {
+                    $('#publicKey').val(wallet.public_key);
+                    $('#privateKey').val(wallet.private_key);
+                }
+            });
+
+            $('#bookingModal').modal('show');
+        });
+
+        // Proceed to Payment
+        $('#proceedBooking').click(function() {
+            // Prepare transaction data
+            let formData = {
+                flight_id: $('#selectedFlightId').val(),
+                flight_number: $('#flightNumber').val(),
+                source: $('#sourceLocation').val(),
+                destination: $('#destinationLocation').val(),
+                user_name: $('#passengerName').val(),
+                date: $('#travelDate').val(),
+                sender_public_key: $('#publicKey').val(),
+                sender_private_key: $('#privateKey').val(),
+                amount: $(`[data-id="${$('#selectedFlightId').val()}"]`).data('price')
+            };
+
+            // Generate transaction
+            $.ajax({
+                url: '/generate/transaction',
+                method: 'POST',
+                data: formData,
+                success: function(response) {
+                    // Show booking confirmation modal with booking ID
+                    $('#bookingId').text(response.transaction.booking_id);
+                    $('#bookingConfirmationModal').modal('show');
+
+                    // Prepare transaction data for blockchain
+                    let transactionData = {
+                        sender_public_key: response.transaction.sender_public_key,
+                        recipient_public_key: response.transaction.recipient_public_key,
+                        amount: response.transaction.amount,
+                        signature: response.signature,
+                        booking_id: response.transaction.booking_id,
+                        flight_number: response.transaction.flight_number,
+                        user_name: response.transaction.user_name,
+                        date: response.transaction.date,
+                        source: response.transaction.source,
+                        destination: response.transaction.destination,
+                        booking_status:"Booked"
+                    };
+
+                    // Send transaction to blockchain
+                    $.ajax({
+                        url: 'http://127.0.0.1:5001/transactions/new',
+                        type: 'POST',
+                        dataType: 'json',
+                        headers: {'Access-Control-Allow-Origin': '*'},
+                        data: transactionData,
+                        success: function(blockchainResponse) {
+                            console.log('Transaction added to blockchain', blockchainResponse);
+                        },
+                        error: function(error) {
+                            console.log('Blockchain transaction error:', error);
+                        }
+                    });
+                },
+                error: function(error) {
+                    console.error('Transaction generation failed:', error);
+                    alert('Failed to generate transaction. Please try again.');
+                }
+            });
+        });
+    });
+    </script>
+</body>
+</html>
